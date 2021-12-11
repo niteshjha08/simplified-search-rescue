@@ -8,11 +8,22 @@
 #include <ros/ros.h>
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
-
+bool aruco_found=false;
+void mycallback(fiducial_msgs::FiducialTransformArray fiducial_transform){
+  
+    if(fiducial_transform.transforms.size()>0){
+      std::cout<<"ARUCO FOUND!!!!";
+      aruco_found=true;
+    }
+}
 
 int main(int argc, char** argv){
     ros::init(argc, argv,"explorer_navigator");
     ros::NodeHandle nh;
+
+    
+    ros::Publisher explorer_rotator = nh.advertise<geometry_msgs::Twist>("/explorer/cmd_vel", 1000);
+    // ros::Publisher trial = nh.advertise<std_msgs::String>("/explorer/cmd_vel", 1000);
 
     MoveBaseClient explorer_client("/explorer/move_base", true);
 
@@ -39,6 +50,17 @@ int main(int argc, char** argv){
     explorer_client.waitForResult();
     std::cout<<"Reached target_1!";
 
+
+    // Rotate until aruco is found
+    geometry_msgs::Twist msg;
+    // Twist msg;
+    msg.angular.z=0.1;
+    while(!aruco_found){
+      ros::Subscriber aruco_listener = nh.subscribe("/fiducial_transforms", 1000, mycallback);
+      std::cout<<"Rotating, searching for ARUCO marker";
+      explorer_rotator.publish(msg);
+      ros::spinOnce();
+    }
     // std::cout<<"Rotating now:";
     // explorer_goal.target_pose.header.frame_id = "map";
     // explorer_goal.target_pose.header.stamp = ros::Time::now();
