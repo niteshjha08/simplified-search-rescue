@@ -43,13 +43,17 @@ void move(XmlRpc::XmlRpcValue aruco_lookup_location) {
 }
 void mycallback(const fiducial_msgs::FiducialTransformArray::ConstPtr& msg)
 {
-  // std::cout << "Fiducial callback called!";
-  if (!msg->transforms.empty()) {//check marker is detected
+  std::cout << "Aruco found value:"<<aruco_found<<std::endl;
+  ROS_INFO("callback called");
+  if (!msg->transforms.empty() && false) {//check marker is detected
   //broadcaster object
+    std::cout<<"fiducial found!!!"<<std::endl;
     static tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped transformStamped;
     //broadcast the new frame to /tf Topic
-    ROS_INFO("marker detected !!!!!");
+    int fiducial_id=msg->transforms[0].fiducial_id;
+    // ROS_INFO("marker detected with number:!!!!!",fiducial_id);
+    std::cout<<"fiducial id detected:"<<fiducial_id<<std::endl;
     ROS_INFO("Now moving to next aruco");
 
     aruco_found = true;
@@ -76,8 +80,6 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh;
   geometry_msgs::Twist msg;
 
-
-
   ros::Publisher explorer_rotator = nh.advertise<geometry_msgs::Twist>("/explorer/cmd_vel", 1000);
   // ros::Publisher trial = nh.advertise<std_msgs::String>("/explorer/cmd_vel", 1000);
   ros::Subscriber aruco_listener = nh.subscribe("/fiducial_transforms", 1000, mycallback);
@@ -96,64 +98,64 @@ int main(int argc, char** argv) {
 
   nh.getParam("/aruco_lookup_locations/target_1", aruco_lookup_locations_1);
   std::cout << "Goal from server is:" << aruco_lookup_locations_1;
-
+  bool reached_goal=false;
   // Build goal for explorer
   move(aruco_lookup_locations_1);
-    std::cout << "Reached target_1!";
-
+  std::cout << "Reached target_1!";
+  ROS_INFO("Reached target 1.");
+  reached_goal=true;
+  aruco_found=false;
   // Rotate until aruco is found
   // Twist msg;
   msg.angular.z = 0.1;
   
-    while (!aruco_found) {
+  while (!aruco_found) {
+    std::cout << "Rotating, searching for ARUCO marker"<<std::endl;
+    explorer_rotator.publish(msg);
+    ros::spinOnce();
+  }
 
-      std::cout << "Rotating, searching for ARUCO marker";
-      explorer_rotator.publish(msg);
-      ros::spinOnce();
-    }
-  msg.angular.z = 0;
-  explorer_rotator.publish(msg);
-
+  // msg.angular.z = 0;
+  // explorer_rotator.publish(msg);
+  // aruco_found=false;
 
 // Now moving to next location
-  nh.getParam("/aruco_lookup_locations/target_2", aruco_lookup_locations_2);
-  std::cout << "Goal from server is:" << aruco_lookup_locations_2;
-  move(aruco_lookup_locations_2);
+  // nh.getParam("/aruco_lookup_locations/target_2", aruco_lookup_locations_2);
+  // std::cout << "Goal from server is:" << aruco_lookup_locations_2;
+  // move(aruco_lookup_locations_2);
   // rotating
   
-
-
-
-
+//   while (!aruco_found) {
+//     std::cout << "Rotating, searching for ARUCO marker"<<std::endl;
+//     explorer_rotator.publish(msg);
+//     // ros::spinOnce();
+//   }
+//   aruco_found=false;
   
-  while (!aruco_found) {
-    std::cout << "Rotating, searching for ARUCO marker";
-    explorer_rotator.publish(msg);
-    ros::spinOnce();
-  }
-  
-  nh.getParam("/aruco_lookup_locations/target_3", aruco_lookup_locations_3);
-  std::cout << "Goal from server is:" << aruco_lookup_locations_3;
-// Build goal for explorer
-  move(aruco_lookup_locations_3);
-  while (!aruco_found) {
+//   nh.getParam("/aruco_lookup_locations/target_3", aruco_lookup_locations_3);
+//   std::cout << "Goal from server is:" << aruco_lookup_locations_3;
+// // Build goal for explorer
+//   move(aruco_lookup_locations_3);
+//   while (!aruco_found) {
 
-    std::cout << "Rotating, searching for ARUCO marker";
-    explorer_rotator.publish(msg);
-    ros::spinOnce();
-  }
+//     std::cout << "Rotating, searching for ARUCO marker"<<std::endl;
+//     explorer_rotator.publish(msg);
+//     // ros::spinOnce();
+//   }
+//   aruco_found=false;
 
-  // Moving to final marker
-  nh.getParam("/aruco_lookup_locations/target_4", aruco_lookup_locations_4);
-  std::cout << "Goal from server is:" << aruco_lookup_locations_4;
-  // Build goal for explorer
-  move(aruco_lookup_locations_4);
-  while (!aruco_found) {
+//   // Moving to final marker
+//   nh.getParam("/aruco_lookup_locations/target_4", aruco_lookup_locations_4);
+//   std::cout << "Goal from server is:" << aruco_lookup_locations_4;
+//   // Build goal for explorer
+//   move(aruco_lookup_locations_4);
+//   while (!aruco_found) {
 
-    std::cout << "Rotating, searching for ARUCO marker";
-    explorer_rotator.publish(msg);
-    ros::spinOnce();
-  }
-  base();
+//     std::cout << "Rotating, searching for ARUCO marker"<<std::endl;
+//     explorer_rotator.publish(msg);
+//     // ros::spinOnce();
+//   }
+//   base();
+//   ros::spin();
 
 }
