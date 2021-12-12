@@ -9,7 +9,7 @@
 #include <ros/ros.h>
 #include <array>
 bool aruco_found=false;
-std::array<std::array<int,3>,4> marker_positions {};
+std::array<std::array<double,3>,4> marker_positions {};
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
 void move_to_target(XmlRpc::XmlRpcValue aruco_lookup_location) {
@@ -78,8 +78,8 @@ void listen(tf2_ros::Buffer &tfBuffer,int fiducial_id) {
         auto trans_y = transformStamped.transform.translation.y;
         auto trans_z = transformStamped.transform.translation.z;
         marker_positions.at(fiducial_id).at(0)=trans_x;
-        marker_positions.at(fiducial_id).at(1)=trans_x;
-        marker_positions.at(fiducial_id).at(2)=trans_x;
+        marker_positions.at(fiducial_id).at(1)=trans_y;
+        marker_positions.at(fiducial_id).at(2)=trans_z;
         ROS_INFO_STREAM("Position in map frame: ["
         << trans_x << ","
         << trans_y << ","
