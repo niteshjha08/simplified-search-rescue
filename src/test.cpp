@@ -8,9 +8,32 @@
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <ros/ros.h>
 #include <array>
+
+
 bool aruco_found=false;
-std::array<std::array<double,3>,4> marker_positions {};
+// Driver function for sorting
+bool sortcol(const std::vector<double>& v1,
+  const std::vector<double>& v2) {
+  return (v1[0] < v2[0]);
+}
+
+std::vector < std::vector <double>>fiducial_array{};
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
+
+void move_to_base() {
+  move_base_msgs::MoveBaseGoal explorer_goal;
+  explorer_goal.target_pose.header.frame_id = "map";
+  explorer_goal.target_pose.header.stamp = ros::Time::now();
+  explorer_goal.target_pose.pose.position.x = -4.0;//
+  explorer_goal.target_pose.pose.position.y = 2.5;//
+  explorer_goal.target_pose.pose.orientation.w = 1.0;
+  MoveBaseClient explorer_client("/explorer/move_base", true);
+  while (!explorer_client.waitForServer(ros::Duration(5.0))) {
+    ROS_INFO("Waiting for the move_base action server to come up for explorer");
+  }
+  explorer_client.sendGoal(explorer_goal);
+  explorer_client.waitForResult();
+}
 
 void move_to_target(XmlRpc::XmlRpcValue aruco_lookup_location) {
   ROS_ASSERT(aruco_lookup_location.getType() == XmlRpc::XmlRpcValue::TypeArray);
@@ -27,6 +50,24 @@ void move_to_target(XmlRpc::XmlRpcValue aruco_lookup_location) {
   }
   explorer_client.sendGoal(explorer_goal);
   explorer_client.waitForResult();
+
+}
+
+void follow_marker(std::vector<double>fiducial_array) {
+  // ROS_ASSERT(aruco_lookup_location.getType() == XmlRpc::XmlRpcValue::TypeArray);
+
+  move_base_msgs::MoveBaseGoal follower_goal;
+  follower_goal.target_pose.header.frame_id = "map";
+  follower_goal.target_pose.header.stamp = ros::Time::now();
+  follower_goal.target_pose.pose.position.x = fiducial_array[1];//
+  follower_goal.target_pose.pose.position.y = fiducial_array[2];//
+  follower_goal.target_pose.pose.orientation.w = 1.0;
+  MoveBaseClient follower_client("/follower/move_base", true);
+  while (!follower_client.waitForServer(ros::Duration(5.0))) {
+    ROS_INFO("Waiting for the move_base action server to come up for explorer");
+  }
+  follower_client.sendGoal(follower_goal);
+  follower_client.waitForResult();
 
 }
 
@@ -47,8 +88,8 @@ void search_at_target(ros::Publisher explorer_rotator){
 
 void broadcast(const fiducial_msgs::FiducialTransformArray::ConstPtr& msg) {
   //for broadcaster
-  tf2_ros::TransformBroadcaster br;
-  // static tf2_ros::TransformBroadcaster br;
+  // tf2_ros::TransformBroadcaster br;
+  static tf2_ros::StaticTransformBroadcaster br;
   geometry_msgs::TransformStamped transformStamped;
 
   //broadcast the new frame to /tf Topic
@@ -58,7 +99,7 @@ void broadcast(const fiducial_msgs::FiducialTransformArray::ConstPtr& msg) {
   
   transformStamped.transform.translation.x = msg->transforms[0].transform.translation.x;
   transformStamped.transform.translation.y = msg->transforms[0].transform.translation.y;
-  transformStamped.transform.translation.z = msg->transforms[0].transform.translation.z;
+  transformStamped.transform.translation.z = msg->transforms[0].transform.translation.z-0.5; // tolerance of 0.5m
   transformStamped.transform.rotation.x = msg->transforms[0].transform.rotation.x;
   transformStamped.transform.rotation.y = msg->transforms[0].transform.rotation.y;
   transformStamped.transform.rotation.z = msg->transforms[0].transform.rotation.z;
@@ -72,20 +113,22 @@ void listen(tf2_ros::Buffer &tfBuffer,int fiducial_id) {
   tf2_ros::TransformListener tfListener(tfBuffer);
   geometry_msgs::TransformStamped transformStamped;
   bool success=false;
+  double fiducial_ids{fiducial_id};
+  // fiducial_id=double(fiducial_id);
   while(!success){
     try {
         transformStamped = tfBuffer.lookupTransform("map", "marker_frame", ros::Time(0));
         auto trans_x = transformStamped.transform.translation.x;
         auto trans_y = transformStamped.transform.translation.y;
-        auto trans_z = transformStamped.transform.translation.z;
-        marker_positions.at(fiducial_id).at(0)=trans_x;
-        marker_positions.at(fiducial_id).at(1)=trans_y;
-        marker_positions.at(fiducial_id).at(2)=trans_z;
+        
+        fiducial_array.push_back({fiducial_ids, trans_x,trans_y});
+        // marker_positions.at(fiducial_id).at(0)=trans_x;
+        // marker_positions.at(fiducial_id).at(1)=trans_y;
+        // marker_positions.at(fiducial_id).at(2)=trans_z;
         ROS_INFO_STREAM("Position in map frame: ["
         << trans_x << ","
         << trans_y << ","
-        << trans_z << "]"
-        <<" for marker : "<<fiducial_id;
+        <<" for marker : "<<fiducial_ids;
         success=true;
         );
     }
@@ -95,11 +138,12 @@ void listen(tf2_ros::Buffer &tfBuffer,int fiducial_id) {
     }
   }
 }
-tf2_ros::Buffer tfBuffer;
+
 void mycallback(const fiducial_msgs::FiducialTransformArray::ConstPtr& msg){
     // ROS_INFO("Callback called once!");
-    
-    if (!msg->transforms.empty()){
+    tf2_ros::Buffer tfBuffer;
+    if (!msg->transforms.empty() && msg->transforms[0].fiducial_area>10000){
+        std::cout<<"fiducial found with id:"<<msg->transforms[0].fiducial_id<<" with area :"<<msg->transforms[0].fiducial_area<<'\n';
         aruco_found=true;
         broadcast(msg);
         listen(tfBuffer,msg->transforms[0].fiducial_id);
@@ -130,11 +174,26 @@ int main(int argc,char **argv){
     move_to_target(aruco_lookup_locations);
     search_at_target(explorer_rotator);
     
+    move_to_base();
+
     std::cout<<"locations:";
-    for(int i=0;i<4;++i){
-        for(int j=0;j<3;++j)
-            std::cout<<marker_positions.at(i).at(j);
-    }
+    // for(int i=0;i<4;++i){
+    //     for(int j=0;j<3;++j)
+    //         std::cout<<fiducial_array.at(i).at(j);
+    // }
+
+    sort(fiducial_array.begin(), fiducial_array.end(), sortcol);
+
+    // for (int i{}; i < 4; i++) {
+    //   for (int j{}; j < 4; j++) {
+    //   std::cout << fiducial_array.at(i).at(j) << " ";
+    //                             }
+    // std::cout << '\n';
+    //                           }
+
+    for (int i{};i < 4;i++) {
+    follow_marker(fiducial_array[i]);
+  }
     // ros::spin();
 
 }
