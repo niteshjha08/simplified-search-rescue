@@ -47,7 +47,8 @@ void search_at_target(ros::Publisher explorer_rotator){
 
 void broadcast(const fiducial_msgs::FiducialTransformArray::ConstPtr& msg) {
   //for broadcaster
-  static tf2_ros::StaticTransformBroadcaster br;
+  tf2_ros::TransformBroadcaster br;
+  // static tf2_ros::TransformBroadcaster br;
   geometry_msgs::TransformStamped transformStamped;
 
   //broadcast the new frame to /tf Topic
@@ -62,7 +63,7 @@ void broadcast(const fiducial_msgs::FiducialTransformArray::ConstPtr& msg) {
   transformStamped.transform.rotation.y = msg->transforms[0].transform.rotation.y;
   transformStamped.transform.rotation.z = msg->transforms[0].transform.rotation.z;
   transformStamped.transform.rotation.w = msg->transforms[0].transform.rotation.w;
-//   ROS_INFO("Broadcasting");
+  ROS_INFO("Broadcasting");
   br.sendTransform(transformStamped);
 }
 
