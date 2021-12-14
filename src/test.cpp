@@ -72,6 +72,7 @@ void follow_marker(std::vector<double>fiducial_array) {
 }
 
 void search_at_target(ros::Publisher explorer_rotator){
+    std::cout<<"inside search_at_target function"<<std::endl;
     aruco_found=false;
     geometry_msgs::Twist msg;
     msg.angular.z=0.1;
@@ -79,7 +80,7 @@ void search_at_target(ros::Publisher explorer_rotator){
     while(!aruco_found){
         explorer_rotator.publish(msg);
         count+=1;
-        // std::cout<<"count:"<<count;
+        std::cout<<"count:"<<count<<std::endl;
         ros::spinOnce();
     }
     msg.angular.z=0.0;
@@ -89,7 +90,8 @@ void search_at_target(ros::Publisher explorer_rotator){
 void broadcast(const fiducial_msgs::FiducialTransformArray::ConstPtr& msg) {
   //for broadcaster
   // tf2_ros::TransformBroadcaster br;
-  static tf2_ros::StaticTransformBroadcaster br;
+  // static tf2_ros::StaticTransformBroadcaster br;   //works with this
+  static tf2_ros::TransformBroadcaster br;
   geometry_msgs::TransformStamped transformStamped;
 
   //broadcast the new frame to /tf Topic
@@ -106,6 +108,7 @@ void broadcast(const fiducial_msgs::FiducialTransformArray::ConstPtr& msg) {
   transformStamped.transform.rotation.w = msg->transforms[0].transform.rotation.w;
   ROS_INFO("Broadcasting");
   br.sendTransform(transformStamped);
+
 }
 
 void listen(tf2_ros::Buffer &tfBuffer,int fiducial_id) {
@@ -115,9 +118,9 @@ void listen(tf2_ros::Buffer &tfBuffer,int fiducial_id) {
   bool success=false;
   double fiducial_ids{fiducial_id};
   // fiducial_id=double(fiducial_id);
-  while(!success){
+  
     try {
-        transformStamped = tfBuffer.lookupTransform("map", "marker_frame", ros::Time(0));
+        transformStamped = tfBuffer.lookupTransform("map", "marker_frame", ros::Time(0),ros::Duration(1.0));
         auto trans_x = transformStamped.transform.translation.x;
         auto trans_y = transformStamped.transform.translation.y;
         
@@ -136,11 +139,11 @@ void listen(tf2_ros::Buffer &tfBuffer,int fiducial_id) {
         ROS_WARN("%s", ex.what());
         ros::Duration(1.0).sleep();
     }
-  }
+  
 }
 
 void mycallback(const fiducial_msgs::FiducialTransformArray::ConstPtr& msg){
-    // ROS_INFO("Callback called once!");
+    ROS_INFO("Callback called once!");
     tf2_ros::Buffer tfBuffer;
     if (!msg->transforms.empty() && msg->transforms[0].fiducial_area>10000){
         std::cout<<"fiducial found with id:"<<msg->transforms[0].fiducial_id<<" with area :"<<msg->transforms[0].fiducial_area<<'\n';
@@ -177,19 +180,20 @@ int main(int argc,char **argv){
     move_to_base();
 
     std::cout<<"locations:";
-    // for(int i=0;i<4;++i){
-    //     for(int j=0;j<3;++j)
-    //         std::cout<<fiducial_array.at(i).at(j);
-    // }
+    for(int i=0;i<4;++i){
+        for(int j=0;j<3;++j)
+            std::cout<<fiducial_array.at(i).at(j);
+        std::cout<<"\n";
+    }
 
     sort(fiducial_array.begin(), fiducial_array.end(), sortcol);
 
-    // for (int i{}; i < 4; i++) {
-    //   for (int j{}; j < 4; j++) {
-    //   std::cout << fiducial_array.at(i).at(j) << " ";
-    //                             }
-    // std::cout << '\n';
-    //                           }
+    for (int i{}; i < 4; i++) {
+      for (int j{}; j < 3; j++) {
+      std::cout << fiducial_array.at(i).at(j) << " ";
+                                }
+    std::cout << '\n';
+                              }
 
     for (int i{};i < 4;i++) {
     follow_marker(fiducial_array[i]);
