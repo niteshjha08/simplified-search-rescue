@@ -19,7 +19,7 @@ typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseCl
 
 void base() {
   move_base_msgs::MoveBaseGoal explorer_goal;
-  ROS_INFO("Moving back to base bitches!!!!!  ");
+  ROS_INFO("Moving back to base !!!!!  ");
   explorer_goal.target_pose.header.frame_id = "map";
   explorer_goal.target_pose.header.stamp = ros::Time::now();
   explorer_goal.target_pose.pose.position.x = -4.0;//
@@ -57,8 +57,8 @@ void follow_to_target(std::vector<double>follow) {
   move_base_msgs::MoveBaseGoal follower_goal;
   follower_goal.target_pose.header.frame_id = "map";
   follower_goal.target_pose.header.stamp = ros::Time::now();
-  follower_goal.target_pose.pose.position.x = follow[1]-0.25;//
-  follower_goal.target_pose.pose.position.y = follow[2]-0.25;//
+  follower_goal.target_pose.pose.position.x = follow[1];//
+  follower_goal.target_pose.pose.position.y = follow[2];//
   follower_goal.target_pose.pose.orientation.w = 1.0;
   MoveBaseClient follower_client("/follower/move_base", true);
   while (!follower_client.waitForServer(ros::Duration(5.0))) {
@@ -87,17 +87,17 @@ void search_at_target(ros::Publisher explorer_rotator){
 void broadcast(const fiducial_msgs::FiducialTransformArray::ConstPtr& msg) {
   //for broadcaster
   if (!msg->transforms.empty()) {
-    static tf2_ros::StaticTransformBroadcaster br;
+    static tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped transformStamped;
 
     //broadcast the new frame to /tf Topic
     transformStamped.header.stamp = ros::Time::now();
     transformStamped.header.frame_id = "explorer_tf/camera_rgb_optical_frame";
-    transformStamped.child_frame_id = "marker_frame";
+    transformStamped.child_frame_id = "marker_frame"; 
 
     transformStamped.transform.translation.x = msg->transforms[0].transform.translation.x;
     transformStamped.transform.translation.y = msg->transforms[0].transform.translation.y;
-    transformStamped.transform.translation.z = msg->transforms[0].transform.translation.z;
+    transformStamped.transform.translation.z = msg->transforms[0].transform.translation.z-0.5;
     transformStamped.transform.rotation.x = msg->transforms[0].transform.rotation.x;
     transformStamped.transform.rotation.y = msg->transforms[0].transform.rotation.y;
     transformStamped.transform.rotation.z = msg->transforms[0].transform.rotation.z;
@@ -115,7 +115,7 @@ void listen(tf2_ros::Buffer& tfBuffer, int fiducial_id) {
   bool success = false;
   double new_fiducial_id{};
   new_fiducial_id = fiducial_id / 1.0;
-  while (!success) {
+  // while (!success) {
       try {
       transformStamped = tfBuffer.lookupTransform("map", "marker_frame", ros::Time(0));
       auto trans_x = transformStamped.transform.translation.x;
@@ -137,7 +137,7 @@ void listen(tf2_ros::Buffer& tfBuffer, int fiducial_id) {
     catch (tf2::TransformException& ex) {
         ROS_WARN("%s", ex.what());
         ros::Duration(1.0).sleep();
-    }
+    // }
   }
 }
 void mycallback(const fiducial_msgs::FiducialTransformArray::ConstPtr& msg) {
@@ -146,7 +146,7 @@ void mycallback(const fiducial_msgs::FiducialTransformArray::ConstPtr& msg) {
 
 
   if (!msg->transforms.empty()) {
-    if (msg->transforms[0].fiducial_area >= 30000){
+    if (msg->transforms[0].fiducial_area >= 15000){
       aruco_found = true;
         broadcast(msg);
         std::cout << "Fiducial area is " << msg->transforms[0].fiducial_area;
