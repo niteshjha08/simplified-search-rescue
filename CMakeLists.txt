@@ -141,6 +141,8 @@ include_directories(
 add_executable(${PROJECT_NAME}_node src/main.cpp)
 add_executable(explorer_move src/explorer_move.cpp)
 add_executable(test_node src/test.cpp)
+# add_executable(bot src/explorer.cpp)
+add_executable(usr src/usr.cpp src/explorer.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -161,6 +163,13 @@ target_link_libraries(explorer_move
 )
 
 target_link_libraries(test_node
+  ${catkin_LIBRARIES}
+)
+# target_link_libraries(bot
+#   ${catkin_LIBRARIES}
+# )
+
+target_link_libraries(usr
   ${catkin_LIBRARIES}
 )
 
