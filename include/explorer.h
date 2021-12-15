@@ -29,8 +29,11 @@ class Explorer {
     int curr_fiducial_id;
     tf2_ros::Buffer tfBuffer;
     void listen(tf2_ros::Buffer& tfBuffer);
-    
+    // static tf2_ros::TransformBroadcaster br;
+    // static tf2_ros::TransformListener tfListener(tf2_ros::Buffer& tfBuffer);
 
+    std::vector < std::vector <double>>fiducial_array{};
+    
     private:
     ros::NodeHandle m_nh;
     
@@ -40,11 +43,6 @@ class Explorer {
     // MoveBaseClient explorer_client;
     typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
     MoveBaseClient explorer_client;
-
-    
-    
-    
-    
 
     void m_initialize_subscribers();
     void m_initialize_publishers();
@@ -56,16 +54,6 @@ class Explorer {
     void broadcast(const fiducial_msgs::FiducialTransformArray::ConstPtr& msg);
 
     XmlRpc::XmlRpcValue aruco_lookup_locations;
-
-
-    std::vector < std::vector <double>>fiducial_array{};
-    
-
-    
-    
-    
-    
-
     
 };
 

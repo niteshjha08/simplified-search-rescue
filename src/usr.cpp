@@ -13,6 +13,7 @@ int main(int argc, char** argv){
     //     for(int j=0;j<2;++j)
     //     std::cout<<target_locations[i][j];
     // }
+    // explorer.listen(explorer.tfBuffer);
     for(int i=0;i<4;++i){
 
         explorer.m_move_to_target(target_locations[i]);
@@ -20,7 +21,14 @@ int main(int argc, char** argv){
         explorer.m_aruco_found=false;
         explorer.listen(explorer.tfBuffer);
     }
-    // explorer.m_move_to_target(target_locations[0]);
+    explorer.m_move_to_target(target_locations[0]);
     explorer.m_move_to_base();
+    std::cout<<"Array locations: "; 
+    for(int i=0;i<4;++i){
+        for(int j=0;j<3;++j)
+        std::cout<<explorer.fiducial_array[i][j];
+        std::cout<<" ";}
 
 }   
+// canTransform
+//tfBuffer and tfListener in initialization list

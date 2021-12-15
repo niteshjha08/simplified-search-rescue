@@ -10,6 +10,8 @@ Explorer::Explorer(ros::NodeHandle* nodehandle) :
     explorer_client{"explorer/move_base",true},
     m_aruco_found{false},
     curr_fiducial_id{NULL}
+    // tfBuffer{},
+    // tfListener{tfBuffer}
     // tfListener{static tf2_ros::TransformListener tfListener(tfBuffer)}
     {
     m_initialize_subscribers();
@@ -32,9 +34,10 @@ void Explorer::m_initialize_publishers(){
 void Explorer::broadcast(const fiducial_msgs::FiducialTransformArray::ConstPtr& msg){
     static tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped transformStamped;
-
+    
     //broadcast the new frame to /tf Topic
     transformStamped.header.stamp = ros::Time::now();
+    
     transformStamped.header.frame_id = "explorer_tf/camera_rgb_optical_frame";
     transformStamped.child_frame_id = "marker_frame";
     
@@ -48,18 +51,19 @@ void Explorer::broadcast(const fiducial_msgs::FiducialTransformArray::ConstPtr& 
     curr_fiducial_id=msg->transforms[0].fiducial_id;
     ROS_INFO("Broadcasting");
     br.sendTransform(transformStamped);
-    ros::Duration(2).sleep();
+    // br.sendTransform(transformStamped);
+    // ros::Duration(2).sleep();
 }
 
 void Explorer::listen(tf2_ros::Buffer& tfBuffer) {
   //for listener
   static tf2_ros::TransformListener tfListener(tfBuffer);
-  ros::Duration(2.0).sleep();
+//   ros::Duration(2.0).sleep();
   geometry_msgs::TransformStamped transformStamped;
   bool success=false;
   int count=0;
   double fiducial_ids{curr_fiducial_id};
-  // while(!success){
+//   while(!success){
 
     try {
         transformStamped = tfBuffer.lookupTransform("map", "marker_frame", ros::Time(0));
@@ -80,7 +84,7 @@ void Explorer::listen(tf2_ros::Buffer& tfBuffer) {
         ROS_WARN("%s", ex.what());
         ros::Duration(1.0).sleep();
     }
-  // }
+//   }
   
 }
 
@@ -111,7 +115,7 @@ void Explorer::m_move_to_target(std::vector<double> aruco_lookup_location){
 
 void Explorer::m_search_at_target(){
     geometry_msgs::Twist msg;
-    msg.angular.z=0.03;
+    msg.angular.z=0.1;
     int count=0;
     ros::Rate rate(5);
     while(!m_aruco_found){
