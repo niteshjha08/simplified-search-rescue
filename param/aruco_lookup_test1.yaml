@@ -1,5 +1,5 @@
 aruco_lookup_locations:
   target_1: [3.55, 3.35]
   target_2: [5.58,2.92]
-  target_3: [-4.21,2.53]
+  target_3: [-4.21,-2.8]
   target_4: [5.78,-2.5]

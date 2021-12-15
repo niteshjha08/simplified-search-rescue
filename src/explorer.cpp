@@ -43,7 +43,7 @@ void Explorer::broadcast(const fiducial_msgs::FiducialTransformArray::ConstPtr& 
     
     transformStamped.transform.translation.x = msg->transforms[0].transform.translation.x;
     transformStamped.transform.translation.y = msg->transforms[0].transform.translation.y;
-    transformStamped.transform.translation.z = msg->transforms[0].transform.translation.z-0.5; // tolerance of 0.5m
+    transformStamped.transform.translation.z = msg->transforms[0].transform.translation.z-0.7; // tolerance of 0.5m
     transformStamped.transform.rotation.x = msg->transforms[0].transform.rotation.x;
     transformStamped.transform.rotation.y = msg->transforms[0].transform.rotation.y;
     transformStamped.transform.rotation.z = msg->transforms[0].transform.rotation.z;
