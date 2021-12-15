@@ -1,8 +1,8 @@
 <launch>
-  <arg name="world_name" default="$(find final_project)/world/test1_world.world" />
+  <arg name="world_name" default="$(find final_project)/world/final_world.world" />
   <arg name="gazebo_ros_output" default="screen"/>
   <!-- load content of targets.yaml into the Parameter Server -->
-  <rosparam file="$(find final_project)/param/aruco_lookup_test1.yaml" command="load" />
+  <rosparam file="$(find final_project)/param/aruco_lookup.yaml" command="load" />
 
 
 <!-- <node name="gazebo" pkg="gazebo_ros" type="gazebo"
