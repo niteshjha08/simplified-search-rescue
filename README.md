@@ -2,20 +2,23 @@
 This project aims to simulate the Urban Search and Rescue operation in ROS. 
 Here, we work in environment where the map is available, which can also be created using `gmapping` package of ROS. One turtlebot explores the environment while searching for 'trapped victims', modeled with ArUcO markers. These markers have IDs which can represent 'severity' of injury. Once the environment is explored and all markers found, the explorer turtlebot returns to start location and the 'rescuer' turtlebot goes to each of the markers in ID order. 
 
-![world](https://github.com/niteshjha08/simplified-search-rescue/blob/main/media/world.png)
+
+<img src="https://github.com/niteshjha08/simplified-search-rescue/blob/main/media/world.png" width="1000px" align="center">
 
 ### 1. Explorer robot reads approximate locations of victims
 We populate the parameter server with approximate coordinates around which targets may be found. The only requirement for this location is that the ArUco marker must be visible from this location in the explorer's camera.
+
+Camera feed of both turtlebots at initial position
 ![camera_view](https://github.com/niteshjha08/simplified-search-rescue/blob/main/media/camera_view.png)
 
 The explorer reads these from the parameter server and creates a MoveBase goal, and sets the goal pose as the approximate victim location. Then this goal is sent and the motion begins.
-<!-- ![camera_view](https://github.com/niteshjha08/simplified-search-rescue/blob/main/media/move_to_target.gif) -->
+
 <img src="https://github.com/niteshjha08/simplified-search-rescue/blob/main/media/move_to_target.gif" width="1000px" align="center">
 
 ### 2. Search is executed
 When the explorer reaches the vicinity of victim, it rotates slowly and continuously searches for the ArUco marker, until it is found. When this happens, it calculates the 3D position of the marker.
 <img src="https://github.com/niteshjha08/simplified-search-rescue/blob/main/media/search_at_target.gif" width="1000px" align="center">
-<!-- ![camera_view](https://github.com/niteshjha08/simplified-search-rescue/blob/main/media/search_at_target.gif) -->
+
 
 #### How is 3D pose found?
 This is achieved by using the camera images of the explorer, and running a node 'aruco_detect'. This subscribes to
@@ -24,7 +27,7 @@ This is achieved by using the camera images of the explorer, and running a node 
 This node searches for the markers in every frame. When a marker is found, the image coordinates of the corners of the marker is saved. We leverage the fact that the marker lies on a plane, and calculate the homography matrix that will transform the marker (assuming z=0) to the current image coordinates. With the homography matrix H and the camera intrinsic matrix K, we can find the Projection matrix P. 
 <img src="https://github.com/niteshjha08/simplified-search-rescue/blob/main/media/eq1.png" width="200px" align="center">
 
-<img src="https://github.com/niteshjha08/simplified-search-rescue/blob/main/media/eq2.png" width="200px" align="center">
+<img src="https://github.com/niteshjha08/simplified-search-rescue/blob/main/media/eq2.png" width="350px" align="center">
 
 With this, using the 2D image points, we find the 3D world coordinates.
 
@@ -43,14 +46,14 @@ The broadcast function flow is shown.
 ### 4. Listen to TF topic and determine marker location in map frame
 The listener is then called, and it attempts to look up transform between map frame and marker frame. If the TF lookup succeeds, the position is pushed to an array.
 
-<img src="https://github.com/niteshjha08/simplified-search-rescue/blob/main/media/listener.png" width="500px" align="center">
+<img src="https://github.com/niteshjha08/simplified-search-rescue/blob/main/media/listen.png" width="500px" align="center">
 
 ### 5. Continue search until all victims have been found
 
 <img src="https://github.com/niteshjha08/simplified-search-rescue/blob/main/media/next_search.gif" width="1000px" align="center">
 
-### 6. Rescuer bot initiates motion, and visits all positions of the marker that was stored in the array
+### 6. Rescuer bot initiates motion, and visits all positions of the marker that was stored in the array sorted according to tag ID
 <img src="https://github.com/niteshjha08/simplified-search-rescue/blob/main/media/rescuer_start.gif" width="1000px" align="center">
 
-### 7. 
+
 
